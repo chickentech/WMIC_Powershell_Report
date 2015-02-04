@@ -46,7 +46,7 @@ Function Get-SaveFile($initialDirectory)
  $SaveFileDialog.initialDirectory = $initialDirectory
  $SaveFileDialog.DefaultExt = "html"  # Default file type set to HTML
  $SaveFileDialog.filter = "HTML Files|*.html|All files (*.*)|*.*" # Show HTML Files as the default as well as all files
- $SaveFileDialog.AddExtension = true # Add the HTML extension if not specified
+ $SaveFileDialog.AddExtension = $true # Add the HTML extension if not specified
  $SaveFileDialog.ShowDialog() | Out-Null
  $SaveFileDialog.filename
 } 
