@@ -22,7 +22,7 @@ $Script = $MyInvocation.MyCommand.Definition
 
 #Launch script in a separate PowerShell process with STA enabled 
 
-Start-Process powershell.exe -ArgumentList "-sta $Script"
+Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
 
 Exit
 
@@ -36,6 +36,7 @@ Exit
 ####
 ####  Function to use a Windows Form to select File Save Location
 ####
+
 
 Function Get-SaveFile($initialDirectory)
 { 
@@ -56,7 +57,19 @@ $outputFile = Get-SaveFile -initialDirectory "C:\"
 #$outputFile = Read-Host 'Please enter the full path and file name to save output to.'
 
 # Ask for the hostname from the command line (change this to a Windows Form box soon)
-$targetComputer = Read-Host 'Enter the target computer hostname.'
+#$targetComputer = Read-Host 'Enter the target computer hostname.'
+
+####
+####
+#### Fancy way to ask for the computer name
+####
+####
+
+# Load bit from Visual Basic we need
+[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
+# Ask for input
+$targetComputer = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the computer hostname or IP address.", "Computer Name/IP Address", "") 
+
 
 # HTML & CSS Formatting
 $a = "<style>"
