@@ -100,6 +100,9 @@ Write-Host "Querying Computer's Make, Model, Serial Number..."
 ### PC Model and Serial # information
 gwmi win32_computersystem -ComputerName $targetComputer | select Manufacturer, Model, Name | ConvertTo-HTML -head $a | out-file $outputFile -Append
 
+## OS Architecture x86 or x64
+gwmi win32_operatingsystem -ComputerName $targetComputer | select OSArchitecture | ConvertTo-HTML -head $a | out-file $outputFile -Append
+
 ## Serial Number
 gwmi win32_bios -ComputerName $targetComputer | select SerialNumber | ConvertTo-HTML -head $a | out-file $outputFile -Append
 
