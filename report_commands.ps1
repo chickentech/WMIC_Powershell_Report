@@ -124,7 +124,7 @@ gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcen
 Write-Host "Querying Computer's Add/Remove Programs List..."
 
 ## Add/Remove Programs
-gwmi win32_product -ComputerName $targetComputer | select Name,Vendor,Version | sort name | ConvertTo-HTML -head $a | out-file $outputFile -Append
+gwmi win32Reg_AddRemovePrograms -ComputerName OA5TPPBIO032504 -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -head $a | out-file $outputFile -Append
 
 Write-Host "Writing End of File..."
 
