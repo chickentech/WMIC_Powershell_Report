@@ -129,3 +129,5 @@ gwmi win32Reg_AddRemovePrograms -ComputerName OA5TPPBIO032504 -filter "NOT Displ
 Write-Host "Writing End of File..."
 
 ### End of File
+
+Exit
