@@ -14,17 +14,17 @@ $host.UI.RawUI.WindowTitle="Report Generator"
 
 If ($IsSTAEnabled -eq $false) {
 
-"Script is not running in STA mode. Switching to STA Mode..."
+  "Script is not running in STA mode. Switching to STA Mode..."
 
-#Get Script path and name
+  #Get Script path and name
 
-$Script = $MyInvocation.MyCommand.Definition
+  $Script = $MyInvocation.MyCommand.Definition
 
-#Launch script in a separate PowerShell process with STA enabled
+  #Launch script in a separate PowerShell process with STA enabled
 
-Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
+  Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
 
-Exit
+  Exit
 
 }
 #######
@@ -40,16 +40,16 @@ Exit
 
 Function Get-SaveFile($initialDirectory)
 {
- [Reflection.Assembly]::LoadWithPartialName("System.windows.forms") |
- Out-Null
+  [Reflection.Assembly]::LoadWithPartialName("System.windows.forms") |
+  Out-Null
 
- $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
- $SaveFileDialog.initialDirectory = $initialDirectory
- $SaveFileDialog.DefaultExt = "html"  # Default file type set to HTML
- $SaveFileDialog.filter = "HTML Files|*.html|All files (*.*)|*.*" # Show HTML Files as the default as well as all files
- $SaveFileDialog.AddExtension = $true # Add the HTML extension if not specified
- $SaveFileDialog.ShowDialog() | Out-Null
- $SaveFileDialog.filename
+  $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+  $SaveFileDialog.initialDirectory = $initialDirectory
+  $SaveFileDialog.DefaultExt = "html"  # Default file type set to HTML
+  $SaveFileDialog.filter = "HTML Files|*.html|All files (*.*)|*.*" # Show HTML Files as the default as well as all files
+  $SaveFileDialog.AddExtension = $true # Add the HTML extension if not specified
+  $SaveFileDialog.ShowDialog() | Out-Null
+  $SaveFileDialog.filename
 }
 
 ## Get the user's Desktop Folder to set as initial directory
@@ -91,40 +91,67 @@ $a = $a + "</style>"
 # Add JQuery
 $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script>"
 
+#Create our output file and write the head info
+#This kills any existing file with the same name
+#to prevent writing to the end of an existing HTML file (bad!)
+
+
+Out-File -filePath $outputFile -InputObject $a
 
 ###
 ### Meat of the script running from WMIC Commands
 ###
 Write-Host "Querying Computer..."
 Write-Host "Querying Computer's Make, Model, Serial Number..."
+
+############# ~`~`~`~`~`~`~`~`~`~`~ ################
+#New section to combine several WMI calls into a single object and write output to the file.
+#This is to make it a single table instead of several tables.
+############# ~`~`~`~`~`~`~`~`~`~`~ ################
+
+
 ### PC Model and Serial # information
-gwmi win32_computersystem -ComputerName $targetComputer | select Manufacturer, Model, Name | ConvertTo-HTML -head $a | out-file $outputFile -Append
+$t1 = gwmi win32_computersystem -ComputerName $targetComputer
 
 ## OS Architecture x86 or x64
-gwmi win32_operatingsystem -ComputerName $targetComputer | select OSArchitecture | ConvertTo-HTML -head $a | out-file $outputFile -Append
+$t2 = gwmi win32_operatingsystem -ComputerName $targetComputer
 
 ## Serial Number
-gwmi win32_bios -ComputerName $targetComputer | select SerialNumber | ConvertTo-HTML -head $a | out-file $outputFile -Append
+$t3 = gwmi win32_bios -ComputerName $targetComputer
+
+$output2 = New-Object PSObject -Property @{
+  Manufacturer = $t1.Manufacturer
+  Model = $t1.Model
+  'Hostname' = $t1.Name
+  'OS Architecture' = $t2.OSArchitecture
+  'Computer Serial Number' = $t3.SerialNumber
+}
+
+ConvertTo-Html -Fragment -inputObject $output2 | Out-File $outputFile -Append
+
+############# ~`~`~`~`~`~`~`~`~`~`~ ################
+#############  End of this section  ################
+############# ~`~`~`~`~`~`~`~`~`~`~ ################
 
 Write-Host "Querying Computer's Hard Disk Information..."
 
 ## Disk Information
-gwmi win32_logicaldisk -ComputerName $targetComputer | select DeviceID,Description,FileSystem,FreeSpace,Size,VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -head $a | out-file $outputFile -Append
+gwmi win32_logicaldisk -ComputerName $targetComputer | select DeviceID,Description,FileSystem,FreeSpace,Size,VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
 Write-Host "Querying Computer's Network Adapter Information..."
 
 ## IP Address Information
-gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True" | select Description,DHCPEnabled,DHCPLeaseObtained,DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IpAddress';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -head $a | out-file $outputFile -Append
+gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True" | select Description,DHCPEnabled,DHCPLeaseObtained,DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IpAddress';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
 Write-Host "Querying Computer's Windows Update Information..."
 
 ## Windows Updates
-gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}},user, productname | ConvertTo-HTML -head $a | out-file $outputFile -Append
+gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}},user, productname | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
 Write-Host "Querying Computer's Add/Remove Programs List..."
 
 ## Add/Remove Programs
-gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -head $a | out-file $outputFile -Append
+gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
 Write-Host "Writing End of File..."
 
