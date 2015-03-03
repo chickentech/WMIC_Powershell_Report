@@ -76,12 +76,15 @@ $outputFile = Get-SaveFile -initialDirectory $bfol
 # Ask for input
 $targetComputer = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the computer hostname or IP address.", "Computer Name/IP Address", "")
 
+$sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
+
+
 Write-Host "Setting up HTML File..."
 
 # HTML & CSS Formatting
 $a = "<style>"
 $a = $a + "BODY{background-color:white;}" #Background
-$a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;}"
+$a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}"
 $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
 $a = $a + "TD{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
 $a = $a + "TR:nth-child(even){background-color: #CCC;}" # Alternate row colors
@@ -95,8 +98,19 @@ $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/l
 #This kills any existing file with the same name
 #to prevent writing to the end of an existing HTML file (bad!)
 
+## Get Date Object for Header
+$dat = Get-Date
 
 Out-File -filePath $outputFile -InputObject $a
+
+## Output Header on the page - including computer name and date information
+## This will keep us from working from old information later.
+
+##Generate HTML to inject into page
+$e = "<div style='text-align: center;'><h1> Computer:  " + $targetComputer + "</h1>"
+$e = $e + "<p>Date: " + ($dat.ToShortDateString()) + "</p><p>Time:  " + ($dat.ToShortTimeString()) + "</p></div>"
+##Inject Generated HTML into page
+Out-File -filePath $outputFile -InputObject $e -Append
 
 ###
 ### Meat of the script running from WMIC Commands
@@ -154,6 +168,13 @@ Write-Host "Querying Computer's Add/Remove Programs List..."
 gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
 Write-Host "Writing End of File..."
+
+$sw.Stop()
+$formatTime1 = $sw.Elapsed.ToString()
+$formatTime = "<p align='right'>Script ran in:  " + $sw.Elapsed.Minutes.ToString() + " Minutes, " + $sw.Elapsed.Seconds.ToString() + " Seconds, and " + $sw.Elapsed.Milliseconds.ToString() + " Milliseconds. </p>"
+
+
+Out-File -filePath $outputFile -inputObject $formatTime -Append
 
 ### End of File
 
