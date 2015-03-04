@@ -140,6 +140,7 @@ $output2 = New-Object PSObject -Property @{
   'Logged In User' = $t1.UserName
   'OS Architecture' = $t2.OSArchitecture
   'Computer Serial Number' = $t3.SerialNumber
+  'System Up Since' = ([Management.ManagementDateTimeConverter]::ToDateTime($t2.LastBootUpTime))
 }
 
 ConvertTo-Html -Fragment -inputObject $output2 | Out-File $outputFile -Append
