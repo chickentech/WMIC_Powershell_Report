@@ -137,6 +137,7 @@ $output2 = New-Object PSObject -Property @{
   Manufacturer = $t1.Manufacturer
   Model = $t1.Model
   'Hostname' = $t1.Name
+  'Logged In User' = $t1.UserName
   'OS Architecture' = $t2.OSArchitecture
   'Computer Serial Number' = $t3.SerialNumber
 }
