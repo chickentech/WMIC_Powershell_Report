@@ -108,7 +108,7 @@ Out-File -filePath $outputFile -InputObject $a
 
 ##Generate HTML to inject into page
 $e = "<div style='text-align: center;'><h1> Computer:  " + $targetComputer + "</h1>"
-$e = $e + "<p>Date: " + ($dat.ToShortDateString()) + "</p><p>Time:  " + ($dat.ToShortTimeString()) + "</p></div>"
+$e = $e + "<p><h3>Report Generated:</h3>Date: " + ($dat.ToShortDateString()) + "<br>Time:  " + ($dat.ToShortTimeString()) + "</p></div>"
 ##Inject Generated HTML into page
 Out-File -filePath $outputFile -InputObject $e -Append
 
