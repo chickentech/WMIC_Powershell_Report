@@ -1,4 +1,29 @@
-﻿[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+﻿##Check that script is running in STA mode:
+#Validate that Script is launched
+
+$IsSTAEnabled = $host.Runspace.ApartmentState -eq 'STA'
+
+#Set the name of the console window
+
+$host.UI.RawUI.WindowTitle="Report Generator"
+
+If ($IsSTAEnabled -eq $false) {
+
+  "Script is not running in STA mode. Switching to STA Mode..."
+
+  #Get Script path and name
+
+  $Script = $MyInvocation.MyCommand.Definition
+
+  #Launch script in a separate PowerShell process with STA enabled
+
+  Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
+
+  Exit
+
+}
+
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
 
 Function Get-SaveFile($initialDirectory)
