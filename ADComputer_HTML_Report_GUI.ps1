@@ -1,23 +1,27 @@
-﻿##Check that script is running in STA mode:
+﻿<#
+.Synopsis
+    Script by: Nathan Behe
+    For: Office of Administration - Commonwealth of Pennsylvania
+    Creation Date: 3/25/2015
+
+.Description
+    This script creates a GUI that will accept a hostname and a file save location and then output a HTML file (and then open it) which displays the WMI Queried information
+
+#>
+##Check that script is running in STA mode:
 #Validate that Script is launched
 
 $IsSTAEnabled = $host.Runspace.ApartmentState -eq 'STA'
 
 #Set the name of the console window
 
-$host.UI.RawUI.WindowTitle="Report Generator"
+$host.UI.RawUI.WindowTitle="HTML Report Generator"
 
 If ($IsSTAEnabled -eq $false) {
 
-  "Script is not running in STA mode. Switching to STA Mode..."
-
-  #Get Script path and name
-
-  $Script = $MyInvocation.MyCommand.Definition
-
   #Launch script in a separate PowerShell process with STA enabled
 
-  Start-Process powershell.exe -ArgumentList "-STA" $Script
+  Start-Process powershell.exe -ArgumentList "-STA .\ADComputer_HTML_Report_GUI.ps1"
 
   Exit
 
@@ -191,6 +195,7 @@ $objForm.Controls.Add($objFilePath)
 ## Add a statusbar at the bottom to display what the script is doing while running.
 $objStatusBar = New-Object System.Windows.Forms.StatusStrip
 $status.Text = ""
+$objStatusBar.SizingGrip = $false
 [void]$objStatusBar.Items.Add($status)
 $objForm.Controls.Add($objStatusBar)
 
