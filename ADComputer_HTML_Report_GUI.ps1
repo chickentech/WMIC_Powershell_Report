@@ -17,7 +17,7 @@ If ($IsSTAEnabled -eq $false) {
 
   #Launch script in a separate PowerShell process with STA enabled
 
-  Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
+  Start-Process powershell.exe -ArgumentList "-STA" $Script
 
   Exit
 
@@ -26,29 +26,17 @@ If ($IsSTAEnabled -eq $false) {
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
 
-Function Get-SaveFile($initialDirectory)
-{
-  [Reflection.Assembly]::LoadWithPartialName("System.windows.forms") |
-  Out-Null
-
-  $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
-  $SaveFileDialog.initialDirectory = $initialDirectory
-  $SaveFileDialog.DefaultExt = "html"  # Default file type set to HTML
-  $SaveFileDialog.filter = "HTML Files|*.html|All files (*.*)|*.*" # Show HTML Files as the default as well as all files
-  $SaveFileDialog.AddExtension = $true # Add the HTML extension if not specified
-  $SaveFileDialog.ShowDialog() | Out-Null
-  $SaveFileDialog.filename
-}
-
-
 Function Get-WMIQuery($outputFile,$targetComputer){
-$isEmpty = [bool]$targetComputer
-    if($isEmpty){
+$isCompEmpty = [bool]$targetComputer
+$isFileEmpty = [bool]$outputFile
+    if($isCompEmpty -and $isFileEmpty){
         ## Setup Variables
-        [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
+        #[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
         $sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
         $dat = Get-Date
         # HTML & CSS Formatting
+        $status.Text = "Setting Up HTML File..."
+        $objForm.refresh()
         $a = "<style>"
         $a = $a + "BODY{background-color:white;}" #Background
         $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}"
@@ -68,6 +56,8 @@ $isEmpty = [bool]$targetComputer
         ##Inject Generated HTML into page
         Out-File -filePath $outputFile -InputObject $e -Append
 
+        $status.Text = "Gathering General PC Information..."
+        $objForm.refresh()
         ### PC Model and Serial # information
         $t1 = gwmi win32_computersystem -ComputerName $targetComputer
 
@@ -93,15 +83,23 @@ $isEmpty = [bool]$targetComputer
 
         ConvertTo-Html -Fragment -inputObject $output2 | Out-File $outputFile -Append
 
+        $status.Text = "Gathering Disk Information..."
+        $objForm.refresh()
         ## Disk Information
         gwmi win32_logicaldisk -ComputerName $targetComputer | select DeviceID,Description,FileSystem,FreeSpace,Size,VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
+        $status.Text = "Gathering Network Adapter Information..."
+        $objForm.refresh()
         ## IP Address Information
         gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | select Description,DHCPEnabled,DHCPLeaseObtained,DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IpAddress';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
+        $status.Text = "Gathering Windows Update Information..."
+        $objForm.refresh()
         ## Windows Updates
         gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, productname | sort date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
+        $status.Text = "Gathering Add/Remove Programs Information..."
+        $objForm.refresh()
         ## Add/Remove Programs
         gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
@@ -109,85 +107,99 @@ $isEmpty = [bool]$targetComputer
         $formatTime1 = $sw.Elapsed.ToString()
         $formatTime = "<p align='right'>Script ran in:  " + $sw.Elapsed.Minutes.ToString() + " Minutes, " + $sw.Elapsed.Seconds.ToString() + " Seconds, and " + $sw.Elapsed.Milliseconds.ToString() + " Milliseconds. </p>"
 
-
+        $status.Text = "Writing End of File Information..."
+        $objForm.refresh()
         Out-File -filePath $outputFile -inputObject $formatTime -Append
-
+        
+        $objTextBox.Select()
+        $status.Text = ""
+        $objForm.refresh()
         ii $outputFile
+        return
 
     } else {
-        [System.Windows.Forms.MessageBox]::Show("Please Enter a Hostname and select a file save location.","Error",[System.Windows.Forms.MessageBoxButtons]::OKCancel,[System.Windows.Forms.MessageBoxIcon]::Warning)
+        [System.Windows.Forms.MessageBox]::Show("Please Enter a Hostname and select a file save location.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
         $objTextBox.Select()
         return
     }
 
 }
 
+## Create Form
 $objForm = New-Object System.Windows.Forms.Form 
 $objForm.Text = "WMI HTML Computer Report"
-$objForm.Size = New-Object System.Drawing.Size(300,300) 
+$objForm.Size = New-Object System.Drawing.Size(300,270) 
 $objForm.StartPosition = "CenterScreen"
+$objForm.ShowInTaskbar = $true
 
+# Create ToolStrip Status Label
+$status = New-Object System.Windows.Forms.ToolStripStatusLabel
+
+# Find User's Desktop Location
 $fol = New-Object -com Shell.Application
 $bfol = ($fol.namespace(0x10)).Self.Path
 
+# Initialize Save File Dialog Properties
 $browse = New-Object Windows.Forms.SaveFileDialog
 $browse.initialDirectory = $bfol
 $browse.DefaultExt = "html"  
 $browse.filter = "HTML Files|*.html|All files (*.*)|*.*" 
-$browse.AddExtension = $true 
+$browse.AddExtension = $true
 
+# Handle Enter and Escape Keys
 $objForm.KeyPreview = $True
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
-    {$x=$objTextBox.Text;$objForm.Close()}})
+    {Get-WMIQuery -outputFile ($objFilePath.Text.ToString()) -targetComputer ($objTextBox.Text.ToString());$objForm.Close()}})
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
     {$objForm.Close()}})
 
-<#
-$OKButton = New-Object System.Windows.Forms.Button
-$OKButton.Location = New-Object System.Drawing.Size(50,80)
-$OKButton.Size = New-Object System.Drawing.Size(75,23)
-$OKButton.Text = "OK"
-$OKButton.Add_Click({$x=$objTextBox.Text;$objForm.Close()})
-$objForm.Controls.Add($OKButton)
-
-$CancelButton = New-Object System.Windows.Forms.Button
-$CancelButton.Location = New-Object System.Drawing.Size(160,80)
-$CancelButton.Size = New-Object System.Drawing.Size(75,23)
-$CancelButton.Text = "Cancel"
-$CancelButton.Add_Click({$objForm.Close()})
-$objForm.Controls.Add($CancelButton)
-
-#>
-
+#Label for Hostname Box
 $objLabel = New-Object System.Windows.Forms.Label
 $objLabel.Location = New-Object System.Drawing.Size(10,20) 
 $objLabel.Size = New-Object System.Drawing.Size(280,20) 
 $objLabel.Text = "Please enter the hostname below:"
 $objForm.Controls.Add($objLabel) 
 
+# Label for Save File Box
+$objSaveLabel = New-Object System.Windows.Forms.Label
+$objSaveLabel.Location = New-Object System.Drawing.Size(10,117)
+$objSaveLabel.Size = New-Object System.Drawing.Size(120,17)
+$objSaveLabel.Text = "File Save Location:"
+$objForm.Controls.Add($objSaveLabel)
+
+# Textbox for Hostname
 $objTextBox = New-Object System.Windows.Forms.TextBox 
 $objTextBox.Location = New-Object System.Drawing.Size(10,40) 
 $objTextBox.Size = New-Object System.Drawing.Size(260,20) 
 $objForm.Controls.Add($objTextBox) 
 
-$objLabelPath = New-Object System.Windows.Forms.Label
-$objLabelPath.Location = New-Object System.Drawing.Size(10,120) 
-$objLabelPath.Size = New-Object System.Drawing.Size(280,20) 
-$objLabelPath.Text = "Select a file save location"
-$objForm.Controls.Add($objLabelPath) 
-
+# Button to choose a save location
 $PathButton = New-Object System.Windows.Forms.Button
-$PathButton.Location = New-Object System.Drawing.Size(100,150)
+$PathButton.Location = New-Object System.Drawing.Size(160,100)
 $PathButton.Size = New-Object System.Drawing.Size(80,30)
-$PathButton.Text = "Click to Choose Path"
-$PathButton.Add_Click({$browse.ShowDialog()})
+$PathButton.Text = "Save Location"
+$PathButton.Add_Click({$browse.ShowDialog();$objFilePath.Text=$browse.FileName.ToString()})
 $objForm.Controls.Add($PathButton)
 
+# Textbox that displays the file save location (may be edited directly)
+$objFilePath = New-Object System.Windows.Forms.TextBox
+$objFilePath.Location = New-Object System.Drawing.Size(10,135)
+$objFilePath.Size = New-Object System.Drawing.Size(260,20)
+$objFilePath.Text = ""
+$objForm.Controls.Add($objFilePath)
+
+## Add a statusbar at the bottom to display what the script is doing while running.
+$objStatusBar = New-Object System.Windows.Forms.StatusStrip
+$status.Text = ""
+[void]$objStatusBar.Items.Add($status)
+$objForm.Controls.Add($objStatusBar)
+
+# Execute Button
 $ExecuteButton = New-Object System.Windows.Forms.Button
-$ExecuteButton.Location = New-Object System.Drawing.Size(195,225)
+$ExecuteButton.Location = New-Object System.Drawing.Size(195,180)
 $ExecuteButton.Size = New-Object System.Drawing.Size(75,30)
 $ExecuteButton.Text = "Execute"
-$ExecuteButton.Add_Click({Get-WMIQuery -outputFile ($browse.FileName.ToString()) -targetComputer ($objTextBox.Text.ToString())})
+$ExecuteButton.Add_Click({Get-WMIQuery -outputFile ($objFilePath.Text.ToString()) -targetComputer ($objTextBox.Text.ToString())})
 $objForm.Controls.Add($ExecuteButton)
 
 $objForm.Topmost = $True
@@ -199,6 +211,3 @@ $objForm.Add_Load({$objTextBox.Select()})
 $objForm.FormBorderStyle = 'Fixed3D'
 $objForm.MaximizeBox = $false
 [void] $objForm.ShowDialog()
-
-$objTextBox.Text
-$browse.FileName.ToString()
