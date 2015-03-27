@@ -33,7 +33,11 @@ If ($IsSTAEnabled -eq $false) {
 Function Get-WMIQuery($outputFile,$targetComputer){
 $isCompEmpty = [bool]$targetComputer
 $isFileEmpty = [bool]$outputFile
-    if($isCompEmpty -and $isFileEmpty){
+$status.Text = "Sending Ping to check if computer is on..."
+$objForm.Refresh()
+Write-Host -ForegroundColor Blue -BackgroundColor White "Sending Ping to Computer..."
+$isAlive = Test-Connection -ComputerName $targetComputer -Quiet
+    if($isCompEmpty -and $isFileEmpty -and $isAlive){
         ## Setup Variables
         #[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
         $sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
@@ -41,7 +45,8 @@ $isFileEmpty = [bool]$outputFile
         # HTML & CSS Formatting
         $status.Text = "Setting Up HTML File..."
         $objForm.refresh()
-        $a = "<style>"
+        Write-Host -ForegroundColor Green "Setting Up HTML File..."
+        $a = "<html><head><style>"
         $a = $a + "BODY{background-color:white;}" #Background
         $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}"
         $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
@@ -51,17 +56,18 @@ $isFileEmpty = [bool]$outputFile
         $a = $a + "</style>"
 
         # Add JQuery
-        $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script>"
+        $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>"
 
         Out-File -filePath $outputFile -InputObject $a
 
-        $e = "<div style='text-align: center;'><h1> Computer:  " + $targetComputer + "</h1>"
+        $e = "<body><div style='text-align: center;'><h1> Computer:  " + $targetComputer + "</h1>"
         $e = $e + "<p><h3>Report Generated:</h3>Date: " + ($dat.ToShortDateString()) + "<br>Time:  " + ($dat.ToShortTimeString()) + "</p></div>"
         ##Inject Generated HTML into page
         Out-File -filePath $outputFile -InputObject $e -Append
 
         $status.Text = "Gathering General PC Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Gathering General PC Information..."
         ### PC Model and Serial # information
         $t1 = gwmi win32_computersystem -ComputerName $targetComputer
 
@@ -89,43 +95,57 @@ $isFileEmpty = [bool]$outputFile
 
         $status.Text = "Gathering Disk Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Gathering Disk Information..."
         ## Disk Information
         gwmi win32_logicaldisk -ComputerName $targetComputer | select DeviceID,Description,FileSystem,FreeSpace,Size,VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Network Adapter Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Gathering Network Adapter Information..."
         ## IP Address Information
         gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | select Description,DHCPEnabled,DHCPLeaseObtained,DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IpAddress';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Windows Update Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Gathering Windows Update Information..."
         ## Windows Updates
         gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, productname | sort date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Add/Remove Programs Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Gathering Add/Remove Programs Information..."
         ## Add/Remove Programs
         gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $sw.Stop()
         $formatTime1 = $sw.Elapsed.ToString()
-        $formatTime = "<p align='right'>Script ran in:  " + $sw.Elapsed.Minutes.ToString() + " Minutes, " + $sw.Elapsed.Seconds.ToString() + " Seconds, and " + $sw.Elapsed.Milliseconds.ToString() + " Milliseconds. </p>"
+        $formatTime = "<p align='right'>Script ran in:  " + $sw.Elapsed.Minutes.ToString() + " Minutes, " + $sw.Elapsed.Seconds.ToString() + " Seconds, and " + $sw.Elapsed.Milliseconds.ToString() + " Milliseconds. </p></body></html>"
 
         $status.Text = "Writing End of File Information..."
         $objForm.refresh()
+        Write-Host -ForegroundColor Green "Writing End of File Information..."
         Out-File -filePath $outputFile -inputObject $formatTime -Append
         
-        $objTextBox.Select()
         $status.Text = ""
         $objForm.refresh()
+        Clear-Host
+        $objTextBox.SelectAll()
         ii $outputFile
         return
 
-    } else {
+    } ElseIf(!$isCompEmpty -or !$isFileEmpty) {
         [System.Windows.Forms.MessageBox]::Show("Please Enter a Hostname and select a file save location.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
-        $objTextBox.Select()
+        Clear-Host
+        Write-Host -ForegroundColor Red "Computer Hostname or File Save Location is blank!"
+        $objTextBox.SelectAll()
         return
-    }
+    } ElseIf(!$isAlive){
+        [System.Windows.Forms.MessageBox]::Show("Computer selected is not responding to pings.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
+        Clear-Host
+        Write-Host -ForegroundColor Red "Computer is not responding to pings!"
+        $objTextBox.SelectAll()
+        return
+        }
 
 }
 

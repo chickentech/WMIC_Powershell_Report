@@ -1,4 +1,5 @@
-﻿##Check that script is running in STA mode:
+﻿Import-Module ActiveDirectory
+##Check that script is running in STA mode:
 #Validate that Script is launched
 
 $IsSTAEnabled = $host.Runspace.ApartmentState -eq 'STA'
@@ -17,7 +18,7 @@ If ($IsSTAEnabled -eq $false) {
 
   #Launch script in a separate PowerShell process with STA enabled
 
-  Start-Process powershell.exe -ArgumentList "-STA .\report_commands.ps1"
+  Start-Process powershell.exe -ArgumentList "-STA .\ADUser_HTML_Report.ps1"
 
   Exit
 
@@ -77,6 +78,7 @@ $outputFile = Get-SaveFile -initialDirectory $bfol
 # Ask for input
 $ourUser = [Microsoft.VisualBasic.Interaction]::InputBox("Enter the username.", "CWOPA Username", "")
 
+
 ## Declare Variables
 $adServer = "enhbgdc502.pa.lcl"
 $dat = Get-Date
@@ -84,7 +86,7 @@ $dat = Get-Date
 ### HTML File Info
 ### Head Section
 # HTML & CSS Formatting
-$a = "<style>"
+$a = "<html><head><style>"
 $a = $a + "BODY{background-color:white;}" #Background
 $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}"
 $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
@@ -94,12 +96,12 @@ $a = $a + "TR:nth-child(odd){background-color: #FFF;}" #Alternate..
 $a = $a + "</style>"
 
 # Add JQuery
-$a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script>"
+$a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>"
 Out-File -filePath $outputFile -InputObject $a
 ## End Head Section
 ##Generate HTML to inject into page - Heading
 
-$e = "<div style='text-align: center;'><h1> User:  " + $ourUser + "</h1>"
+$e = "<body><div style='text-align: center;'><h1> User:  " + $ourUser + "</h1>"
 $e = $e + "<p><h3>Report Generated:</h3>Date: " + ($dat.ToShortDateString()) + "<br>Time:  " + ($dat.ToShortTimeString()) + "</p></div>"
 ##Inject Generated HTML into page
 Out-File -filePath $outputFile -InputObject $e -Append
@@ -138,5 +140,5 @@ Get-ADUser -Server $adServer -Identity $ourUser -Properties HomeDirectory, Profi
 ## Get Groups for user
 $mygroups = $((Get-Aduser -server $adServer -identity $ourUser -Properties *).MemberOf -split "," | select-string -SimpleMatch "CN=") -replace "CN=",""
 $mygroups = $mygroups -join ", "
-$myOutput = "<p align=center>" + $mygroups + "</p>"
+$myOutput = "<p align=center>" + $mygroups + "</p></body></html>"
 Out-File -Filepath $outputFile -InputObject $myOutput -Append
