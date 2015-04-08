@@ -109,7 +109,7 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $objForm.refresh()
         Write-Host -ForegroundColor Green "Gathering Windows Update Information..."
         ## Windows Updates
-        gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, productname | sort date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, productname | sort date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Add/Remove Programs Information..."
         $objForm.refresh()
@@ -152,7 +152,7 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 ## Create Form
 $objForm = New-Object System.Windows.Forms.Form 
 $objForm.Text = "WMI HTML Computer Report"
-$objForm.Size = New-Object System.Drawing.Size(300,270) 
+$objForm.Size = New-Object System.Drawing.Size(300,280) 
 $objForm.StartPosition = "CenterScreen"
 $objForm.ShowInTaskbar = $true
 
