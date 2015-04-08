@@ -55,6 +55,9 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $a = $a + "TR:nth-child(odd){background-color: #FFF;}" #Alternate..
         $a = $a + "</style>"
 
+        # Add HTML Page Title with Computer Name
+        $a = $a + "<title>WMI Query Report for Computer:  " + $targetComputer + "</title>"
+
         # Add JQuery
         $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>"
 
@@ -89,7 +92,8 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
             'OS Architecture' = $t2.OSArchitecture
             'Computer Serial Number' = $t3.SerialNumber
             'System Up Time' = "Days: " + $finalElapsed.Days + " Hours: " + $finalElapsed.Hours + " Minutes: " + $finalElapsed.Minutes
-            }
+            } | Select-Object Manufacturer,Model,'Computer Serial Number',Hostname,'Logged In User','OS Architecture','System Up Time'
+        
 
         ConvertTo-Html -Fragment -inputObject $output2 | Out-File $outputFile -Append
 
@@ -97,25 +101,25 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $objForm.refresh()
         Write-Host -ForegroundColor Green "Gathering Disk Information..."
         ## Disk Information
-        gwmi win32_logicaldisk -ComputerName $targetComputer | select DeviceID,Description,FileSystem,FreeSpace,Size,VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        gwmi win32_logicaldisk -ComputerName $targetComputer | select @{Label = "Drive Letter";Expression = {$_.DeviceID}},Description,FileSystem,@{Label="Free Space (GB)";Expression={"{0:N2}" -f ($_.FreeSpace/1GB)}},@{Label="Total Size (GB)";Expression={"{0:N2}" -f ($_.Size/1GB)}},VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Network Adapter Information..."
         $objForm.refresh()
         Write-Host -ForegroundColor Green "Gathering Network Adapter Information..."
         ## IP Address Information
-        gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | select Description,DHCPEnabled,DHCPLeaseObtained,DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IpAddress';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | select @{Label="Network Adapter";Expression = {$_.Description}},DHCPEnabled,@{Label="DHCP Lease Obtained";Expression={$_.ConvertToDateTime($_.DHCPLeaseObtained)}},DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IP Address';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Windows Update Information..."
         $objForm.refresh()
         Write-Host -ForegroundColor Green "Gathering Windows Update Information..."
         ## Windows Updates
-        gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, productname | sort date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, @{Label = "Windows Update";Expression = {$_.productname}} | sort Date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $status.Text = "Gathering Add/Remove Programs Information..."
         $objForm.refresh()
         Write-Host -ForegroundColor Green "Gathering Add/Remove Programs Information..."
         ## Add/Remove Programs
-        gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select DisplayName,Publisher,Version | sort DisplayName | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select @{Label="Software Title";Expression={$_.DisplayName}},Publisher,Version | sort "Software Title" | ConvertTo-HTML -Fragment | out-file $outputFile -Append
 
         $sw.Stop()
         $formatTime1 = $sw.Elapsed.ToString()
