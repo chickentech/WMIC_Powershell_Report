@@ -1,12 +1,22 @@
-﻿<#
-.Synopsis
+﻿<#  
+.SYNOPSIS  
     Script by: Nathan Behe
     For: Office of Administration - Commonwealth of Pennsylvania
     Creation Date: 3/25/2015
 
-.Description
-    This script creates a GUI that will accept a hostname and a file save location and then output a HTML file (and then open it) which displays the WMI Queried information
+.NOTES  
+    Version                   : 0.1
+    Rights Required           : Domain User
+    Powershell Version        : 1.0
+    Authors                   : Nathan Behe
+    Last Update               : 09-April-2015
 
+.VERSION
+    0.1 - Initial Version
+
+.DESCRIPTION
+    This script creates a GUI that will accept a hostname and a file save location and then output a HTML file (and then open it) which displays the WMI Queried information
+       
 #>
 ##Check that script is running in STA mode:
 #Validate that Script is launched
@@ -21,12 +31,13 @@ If ($IsSTAEnabled -eq $false) {
 
   #Launch script in a separate PowerShell process with STA enabled
 
-  Start-Process powershell.exe -ArgumentList "-STA .\ADComputer_HTML_Report_GUI.ps1"
+  Start-Process -FilePath powershell.exe -ArgumentList "-STA .\ADComputer_HTML_Report_GUI.ps1"
 
   Exit
 
 }
 
+## Required assemblies to be able to work with Windows Forms
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
 
@@ -35,31 +46,36 @@ $isCompEmpty = [bool]$targetComputer
 $isFileEmpty = [bool]$outputFile
 $status.Text = "Sending Ping to check if computer is on..."
 $objForm.Refresh()
-Write-Host -ForegroundColor Blue -BackgroundColor White "Sending Ping to Computer..."
+Write-Host -ForegroundColor Blue -BackgroundColor White -Object "Sending Ping to Computer..."
 $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
     if($isCompEmpty -and $isFileEmpty -and $isAlive){
+        Clear-Host
         ## Setup Variables
-        #[System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic') | Out-Null
         $sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
         $dat = Get-Date
         # HTML & CSS Formatting
         $status.Text = "Setting Up HTML File..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Setting Up HTML File..."
-        $a = "<html><head><style>"
-        $a = $a + "BODY{background-color:white;}" #Background
-        $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}"
-        $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
-        $a = $a + "TD{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}"
-        $a = $a + "TR:nth-child(even){background-color: #CCC;}" # Alternate row colors
-        $a = $a + "TR:nth-child(odd){background-color: #FFF;}" #Alternate..
-        $a = $a + "</style>"
+        Write-Host -ForegroundColor Green -Object "Setting Up HTML File..."
+        $a = "<html><head><style>`r`n"
+        $a = $a + "BODY{background-color:white;}`r`n" #Background
+        $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}`r`n"
+        $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}`r`n"
+        $a = $a + "TD{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}`r`n"
+        $a = $a + "TR:nth-child(even){background-color: #CCC;}`r`n" # Alternate row colors
+        $a = $a + "TR:nth-child(odd){background-color: #FFF;}`r`n" #Alternate..
+        $a = $a + "</style>`r`n"
+        $a = $a + "<!--`r`n"
+        $a = $a + "Generated Output from ADComputer_HTML_Report_GUI.ps1 script`r`n"
+        $a = $a + "Created by: Nathan Behe`r`n"
+        $a = $a + "For the Office of Administration Help Desk"
+        $a = $a + "-->`r`n`r`n`r`n"
 
         # Add HTML Page Title with Computer Name
-        $a = $a + "<title>WMI Query Report for Computer:  " + $targetComputer + "</title>"
+        $a = $a + "<title>WMI Query Report for Computer:  " + $targetComputer + "</title>`r`n"
 
         # Add JQuery
-        $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>"
+        $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>`r`n"
 
         Out-File -filePath $outputFile -InputObject $a
 
@@ -70,21 +86,21 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 
         $status.Text = "Gathering General PC Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Gathering General PC Information..."
+        Write-Host -ForegroundColor Green -Object "Gathering General PC Information..."
         ### PC Model and Serial # information
-        $t1 = gwmi win32_computersystem -ComputerName $targetComputer
+        $t1 = Get-WmiObject -Class win32_computersystem -ComputerName $targetComputer
 
         ## OS Architecture x86 or x64
-        $t2 = gwmi win32_operatingsystem -ComputerName $targetComputer
+        $t2 = Get-WmiObject -Class win32_operatingsystem -ComputerName $targetComputer
 
         ## Serial Number
-        $t3 = gwmi win32_bios -ComputerName $targetComputer
+        $t3 = Get-WmiObject -Class win32_bios -ComputerName $targetComputer
 
         $tim = $t2.ConvertToDateTime($t2.LastBootUpTime)
 
         $finalElapsed = New-TimeSpan -Start $tim -End $dat
 
-        $output2 = New-Object PSObject -Property @{
+        $output2 = New-Object -TypeName PSObject -Property @{
             Manufacturer = $t1.Manufacturer
             Model = $t1.Model
             'Hostname' = $t1.Name
@@ -92,34 +108,34 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
             'OS Architecture' = $t2.OSArchitecture
             'Computer Serial Number' = $t3.SerialNumber
             'System Up Time' = "Days: " + $finalElapsed.Days + " Hours: " + $finalElapsed.Hours + " Minutes: " + $finalElapsed.Minutes
-            } | Select-Object Manufacturer,Model,'Computer Serial Number',Hostname,'Logged In User','OS Architecture','System Up Time'
+            } | Select-Object -Property Manufacturer,Model,'Computer Serial Number',Hostname,'Logged In User','OS Architecture','System Up Time'
         
 
-        ConvertTo-Html -Fragment -inputObject $output2 | Out-File $outputFile -Append
+        ConvertTo-Html -Fragment -inputObject $output2 | Out-File -FilePath $outputFile -Append
 
         $status.Text = "Gathering Disk Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Gathering Disk Information..."
+        Write-Host -ForegroundColor Green -Object "Gathering Disk Information..."
         ## Disk Information
-        gwmi win32_logicaldisk -ComputerName $targetComputer | select @{Label = "Drive Letter";Expression = {$_.DeviceID}},Description,FileSystem,@{Label="Free Space (GB)";Expression={"{0:N2}" -f ($_.FreeSpace/1GB)}},@{Label="Total Size (GB)";Expression={"{0:N2}" -f ($_.Size/1GB)}},VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        Get-WmiObject -Class win32_logicaldisk -ComputerName $targetComputer | Select-Object @{Label = "Drive Letter";Expression = {$_.DeviceID}},Description,FileSystem,@{Label="Free Space (GB)";Expression={"{0:N2}" -f ($_.FreeSpace/1GB)}},@{Label="Total Size (GB)";Expression={"{0:N2}" -f ($_.Size/1GB)}},VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Network Adapter Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Gathering Network Adapter Information..."
+        Write-Host -ForegroundColor Green -Object "Gathering Network Adapter Information..."
         ## IP Address Information
-        gwmi win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | select @{Label="Network Adapter";Expression = {$_.Description}},DHCPEnabled,@{Label="DHCP Lease Obtained";Expression={$_.ConvertToDateTime($_.DHCPLeaseObtained)}},DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IP Address';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        Get-WmiObject -Class win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | Select-Object @{Label="Network Adapter";Expression = {$_.Description}},DHCPEnabled,@{Label="DHCP Lease Obtained";Expression={$_.ConvertToDateTime($_.DHCPLeaseObtained)}},DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IP Address';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Windows Update Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Gathering Windows Update Information..."
+        Write-Host -ForegroundColor Green -Object "Gathering Windows Update Information..."
         ## Windows Updates
-        gwmi -cl win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | select @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, @{Label = "Windows Update";Expression = {$_.productname}} | sort Date -descending | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        Get-WmiObject -class win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | Select-Object @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, @{Label = "Windows Update";Expression = {$_.productname}} | Sort-Object -Property Date -descending | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Add/Remove Programs Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Gathering Add/Remove Programs Information..."
+        Write-Host -ForegroundColor Green -Object "Gathering Add/Remove Programs Information..."
         ## Add/Remove Programs
-        gwmi win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | select @{Label="Software Title";Expression={$_.DisplayName}},Publisher,Version | sort "Software Title" | ConvertTo-HTML -Fragment | out-file $outputFile -Append
+        Get-WmiObject -Class win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | Select-Object @{Label="Software Title";Expression={$_.DisplayName}},Publisher,Version | Sort-Object -Property "Software Title" | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $sw.Stop()
         $formatTime1 = $sw.Elapsed.ToString()
@@ -127,26 +143,26 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 
         $status.Text = "Writing End of File Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green "Writing End of File Information..."
+        Write-Host -ForegroundColor Green -Object "Writing End of File Information..."
         Out-File -filePath $outputFile -inputObject $formatTime -Append
         
         $status.Text = ""
         $objForm.refresh()
         Clear-Host
         $objTextBox.SelectAll()
-        ii $outputFile
+        Invoke-Item -Path $outputFile
         return
 
     } ElseIf(!$isCompEmpty -or !$isFileEmpty) {
         [System.Windows.Forms.MessageBox]::Show("Please Enter a Hostname and select a file save location.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
         Clear-Host
-        Write-Host -ForegroundColor Red "Computer Hostname or File Save Location is blank!"
+        Write-Host -ForegroundColor Red -Object "Computer Hostname or File Save Location is blank!"
         $objTextBox.SelectAll()
         return
     } ElseIf(!$isAlive){
         [System.Windows.Forms.MessageBox]::Show("Computer selected is not responding to pings.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
         Clear-Host
-        Write-Host -ForegroundColor Red "Computer is not responding to pings!"
+        Write-Host -ForegroundColor Red -Object "Computer is not responding to pings!"
         $objTextBox.SelectAll()
         return
         }
@@ -154,21 +170,21 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 }
 
 ## Create Form
-$objForm = New-Object System.Windows.Forms.Form 
+$objForm = New-Object -TypeName System.Windows.Forms.Form 
 $objForm.Text = "WMI HTML Computer Report"
 $objForm.Size = New-Object System.Drawing.Size(300,280) 
 $objForm.StartPosition = "CenterScreen"
 $objForm.ShowInTaskbar = $true
 
 # Create ToolStrip Status Label
-$status = New-Object System.Windows.Forms.ToolStripStatusLabel
+$status = New-Object -TypeName System.Windows.Forms.ToolStripStatusLabel
 
 # Find User's Desktop Location
-$fol = New-Object -com Shell.Application
+$fol = New-Object -ComObject Shell.Application
 $bfol = ($fol.namespace(0x10)).Self.Path
 
 # Initialize Save File Dialog Properties
-$browse = New-Object Windows.Forms.SaveFileDialog
+$browse = New-Object -TypeName Windows.Forms.SaveFileDialog
 $browse.initialDirectory = $bfol
 $browse.DefaultExt = "html"  
 $browse.filter = "HTML Files|*.html|All files (*.*)|*.*" 
@@ -182,27 +198,27 @@ $objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape")
     {$objForm.Close()}})
 
 #Label for Hostname Box
-$objLabel = New-Object System.Windows.Forms.Label
+$objLabel = New-Object -TypeName System.Windows.Forms.Label
 $objLabel.Location = New-Object System.Drawing.Size(10,20) 
 $objLabel.Size = New-Object System.Drawing.Size(280,20) 
 $objLabel.Text = "Please enter the hostname below:"
 $objForm.Controls.Add($objLabel) 
 
 # Label for Save File Box
-$objSaveLabel = New-Object System.Windows.Forms.Label
+$objSaveLabel = New-Object -TypeName System.Windows.Forms.Label
 $objSaveLabel.Location = New-Object System.Drawing.Size(10,117)
 $objSaveLabel.Size = New-Object System.Drawing.Size(120,17)
 $objSaveLabel.Text = "File Save Location:"
 $objForm.Controls.Add($objSaveLabel)
 
 # Textbox for Hostname
-$objTextBox = New-Object System.Windows.Forms.TextBox 
+$objTextBox = New-Object -TypeName System.Windows.Forms.TextBox 
 $objTextBox.Location = New-Object System.Drawing.Size(10,40) 
 $objTextBox.Size = New-Object System.Drawing.Size(260,20) 
 $objForm.Controls.Add($objTextBox) 
 
 # Button to choose a save location
-$PathButton = New-Object System.Windows.Forms.Button
+$PathButton = New-Object -TypeName System.Windows.Forms.Button
 $PathButton.Location = New-Object System.Drawing.Size(160,100)
 $PathButton.Size = New-Object System.Drawing.Size(80,30)
 $PathButton.Text = "Save Location"
@@ -210,21 +226,21 @@ $PathButton.Add_Click({$browse.ShowDialog();$objFilePath.Text=$browse.FileName.T
 $objForm.Controls.Add($PathButton)
 
 # Textbox that displays the file save location (may be edited directly)
-$objFilePath = New-Object System.Windows.Forms.TextBox
+$objFilePath = New-Object -TypeName System.Windows.Forms.TextBox
 $objFilePath.Location = New-Object System.Drawing.Size(10,135)
 $objFilePath.Size = New-Object System.Drawing.Size(260,20)
 $objFilePath.Text = ""
 $objForm.Controls.Add($objFilePath)
 
 ## Add a statusbar at the bottom to display what the script is doing while running.
-$objStatusBar = New-Object System.Windows.Forms.StatusStrip
+$objStatusBar = New-Object -TypeName System.Windows.Forms.StatusStrip
 $status.Text = ""
 $objStatusBar.SizingGrip = $false
 [void]$objStatusBar.Items.Add($status)
 $objForm.Controls.Add($objStatusBar)
 
 # Execute Button
-$ExecuteButton = New-Object System.Windows.Forms.Button
+$ExecuteButton = New-Object -TypeName System.Windows.Forms.Button
 $ExecuteButton.Location = New-Object System.Drawing.Size(195,180)
 $ExecuteButton.Size = New-Object System.Drawing.Size(75,30)
 $ExecuteButton.Text = "Execute"
