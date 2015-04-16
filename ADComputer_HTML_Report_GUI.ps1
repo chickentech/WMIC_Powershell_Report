@@ -1,4 +1,4 @@
-﻿<#  
+<#  
 .SYNOPSIS  
     Script by: Nathan Behe
     For: Office of Administration - Commonwealth of Pennsylvania
@@ -15,26 +15,52 @@
     0.1 - Initial Version
 
 .DESCRIPTION
-    This script creates a GUI that will accept a hostname and a file save location and then output a HTML file (and then open it) which displays the WMI Queried information
+    This script creates a GUI that will accept a hostname and a file save location and then output a HTML file (and then open it) which displays the WMI Queried information.
+    I worked very hard to make this only require Powershell v1.0 (and have tested it to work on this version).
        
 #>
-##Check that script is running in STA mode:
+
+Add-Type -Name Window -Namespace Console -MemberDefinition '
+[DllImport("Kernel32.dll")]
+public static extern IntPtr GetConsoleWindow();
+ 
+[DllImport("user32.dll")]
+public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+'
+ 
+function Show-Console {
+   $consolePtr = [Console.Window]::GetConsoleWindow()
+  #5 show
+ [Console.Window]::ShowWindow($consolePtr, 5)
+}
+ 
+function Hide-Console {
+    $consolePtr = [Console.Window]::GetConsoleWindow()
+  #0 hide
+ [Console.Window]::ShowWindow($consolePtr, 0)
+}
+
+
+
+##Check that script is running in STA mode:hi
 #Validate that Script is launched
 
 $IsSTAEnabled = $host.Runspace.ApartmentState -eq 'STA'
 
 #Set the name of the console window
 
-$host.UI.RawUI.WindowTitle="HTML Report Generator"
+#$host.UI.RawUI.WindowTitle="HTML Report Generator"
 
 If ($IsSTAEnabled -eq $false) {
 
   #Launch script in a separate PowerShell process with STA enabled
 
-  Start-Process -FilePath powershell.exe -ArgumentList "-STA .\ADComputer_HTML_Report_GUI.ps1"
+  Start-Process -FilePath powershell.exe -ArgumentList "-STA .\ADComputer_HTML_Report_GUI.ps1 -WindowStyle Hidden"
 
   Exit
 
+} elseif ($IsSTAEnabled -eq $true) {
+    Hide-Console | Out-Null
 }
 
 ## Required assemblies to be able to work with Windows Forms
@@ -42,21 +68,22 @@ If ($IsSTAEnabled -eq $false) {
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
 
 Function Get-WMIQuery($outputFile,$targetComputer){
-$isCompEmpty = [bool]$targetComputer
+#******     Clear-Host
+$isCompEmpty = [bool]$targetComputer # Cast both as Boolean to see if they're blank or not
 $isFileEmpty = [bool]$outputFile
 $status.Text = "Sending Ping to check if computer is on..."
 $objForm.Refresh()
-Write-Host -ForegroundColor Blue -BackgroundColor White -Object "Sending Ping to Computer..."
+#******     Write-Host -ForegroundColor Blue -BackgroundColor White -Object "Sending Ping to Computer..."
 $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
-    if($isCompEmpty -and $isFileEmpty -and $isAlive){
-        Clear-Host
+    if($isCompEmpty -and $isFileEmpty -and $isAlive){ ## Checks to make sure computername and file name are both non-empty values & that computername responds to pings.
+        
         ## Setup Variables
         $sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
         $dat = Get-Date
         # HTML & CSS Formatting
         $status.Text = "Setting Up HTML File..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Setting Up HTML File..."
+        #******     Write-Host -ForegroundColor Green -Object "Setting Up HTML File..."
         $a = "<html><head><style>`r`n"
         $a = $a + "BODY{background-color:white;}`r`n" #Background
         $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}`r`n"
@@ -68,14 +95,13 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $a = $a + "<!--`r`n"
         $a = $a + "Generated Output from ADComputer_HTML_Report_GUI.ps1 script`r`n"
         $a = $a + "Created by: Nathan Behe`r`n"
-        $a = $a + "For the Office of Administration Help Desk"
-        $a = $a + "-->`r`n`r`n`r`n"
+        $a = $a + "Contact at: natbehe@pa.gov`r`n"
+        $a = $a + "For the Office of Administration Help Desk`r`n`r`n`r`n"
+        $a = $a + "-->`r`n"
 
         # Add HTML Page Title with Computer Name
         $a = $a + "<title>WMI Query Report for Computer:  " + $targetComputer + "</title>`r`n"
-
-        # Add JQuery
-        $a = $a + "<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js'></script></head>`r`n"
+        $a = $a + "</head>`r`n"
 
         Out-File -filePath $outputFile -InputObject $a
 
@@ -86,9 +112,10 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 
         $status.Text = "Gathering General PC Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Gathering General PC Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Gathering General PC Information..."
+        trap {Write-Host -Object "Error has occurred - Probably an RPC Error";return}
         ### PC Model and Serial # information
-        $t1 = Get-WmiObject -Class win32_computersystem -ComputerName $targetComputer
+        $t1 = Get-WmiObject -Class win32_computersystem -ComputerName $targetComputer -ErrorAction Stop
 
         ## OS Architecture x86 or x64
         $t2 = Get-WmiObject -Class win32_operatingsystem -ComputerName $targetComputer
@@ -115,25 +142,25 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 
         $status.Text = "Gathering Disk Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Gathering Disk Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Gathering Disk Information..."
         ## Disk Information
         Get-WmiObject -Class win32_logicaldisk -ComputerName $targetComputer | Select-Object @{Label = "Drive Letter";Expression = {$_.DeviceID}},Description,FileSystem,@{Label="Free Space (GB)";Expression={"{0:N2}" -f ($_.FreeSpace/1GB)}},@{Label="Total Size (GB)";Expression={"{0:N2}" -f ($_.Size/1GB)}},VolumeDirty,VolumeName,VolumeSerialNumber | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Network Adapter Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Gathering Network Adapter Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Gathering Network Adapter Information..."
         ## IP Address Information
         Get-WmiObject -Class win32_networkadapterconfiguration -ComputerName $targetComputer -filter "DHCPEnabled = True and NOT Description like '%Remote%'" | Select-Object @{Label="Network Adapter";Expression = {$_.Description}},DHCPEnabled,@{Label="DHCP Lease Obtained";Expression={$_.ConvertToDateTime($_.DHCPLeaseObtained)}},DHCPServer,DNSDomain,DNSHostName,MACAddress,@{Name='IP Address';Expression={$_.IpAddress -join '; '}},@{Name='DefaultIPgateway';Expression={$_.DefaultIPgateway -join '; '}} | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Windows Update Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Gathering Windows Update Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Gathering Windows Update Information..."
         ## Windows Updates
         Get-WmiObject -class win32_reliabilityRecords -ComputerName $targetComputer -filter "sourcename = 'Microsoft-Windows-WindowsUpdateClient'" | Select-Object @{LABEL = "Date";EXPRESSION = {$_.ConvertToDateTime($_.timegenerated)}}, @{Label = "Windows Update";Expression = {$_.productname}} | Sort-Object -Property Date -descending | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
         $status.Text = "Gathering Add/Remove Programs Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Gathering Add/Remove Programs Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Gathering Add/Remove Programs Information..."
         ## Add/Remove Programs
         Get-WmiObject -Class win32Reg_AddRemovePrograms -ComputerName $targetComputer -filter "NOT DisplayName LIKE '%Security Update for%' and NOT DisplayName LIKE '%Service Pack 2 for%'" | Select-Object @{Label="Software Title";Expression={$_.DisplayName}},Publisher,Version | Sort-Object -Property "Software Title" | ConvertTo-HTML -Fragment | out-file -FilePath $outputFile -Append
 
@@ -143,26 +170,26 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
 
         $status.Text = "Writing End of File Information..."
         $objForm.refresh()
-        Write-Host -ForegroundColor Green -Object "Writing End of File Information..."
+        #******     Write-Host -ForegroundColor Green -Object "Writing End of File Information..."
         Out-File -filePath $outputFile -inputObject $formatTime -Append
         
         $status.Text = ""
         $objForm.refresh()
-        Clear-Host
+        #******     Clear-Host
         $objTextBox.SelectAll()
         Invoke-Item -Path $outputFile
         return
 
     } ElseIf(!$isCompEmpty -or !$isFileEmpty) {
         [System.Windows.Forms.MessageBox]::Show("Please Enter a Hostname and select a file save location.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
-        Clear-Host
-        Write-Host -ForegroundColor Red -Object "Computer Hostname or File Save Location is blank!"
+        #******     Clear-Host
+        #******     Write-Host -ForegroundColor Red -Object "Computer Hostname or File Save Location is blank!"
         $objTextBox.SelectAll()
         return
     } ElseIf(!$isAlive){
         [System.Windows.Forms.MessageBox]::Show("Computer selected is not responding to pings.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning)
-        Clear-Host
-        Write-Host -ForegroundColor Red -Object "Computer is not responding to pings!"
+        #******     Clear-Host
+        #******     Write-Host -ForegroundColor Red -Object "Computer is not responding to pings!"
         $objTextBox.SelectAll()
         return
         }
@@ -247,7 +274,7 @@ $ExecuteButton.Text = "Execute"
 $ExecuteButton.Add_Click({Get-WMIQuery -outputFile ($objFilePath.Text.ToString()) -targetComputer ($objTextBox.Text.ToString())})
 $objForm.Controls.Add($ExecuteButton)
 
-$objForm.Topmost = $True
+#$objForm.Topmost = $True
 
 $objForm.Add_Shown({$objForm.Activate()})
 # Set Focus to the Hostname Textbox
