@@ -28,18 +28,11 @@ public static extern IntPtr GetConsoleWindow();
 public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 '
  
-function Show-Console {
-   $consolePtr = [Console.Window]::GetConsoleWindow()
-  #5 show
- [Console.Window]::ShowWindow($consolePtr, 5)
-}
- 
 function Hide-Console {
     $consolePtr = [Console.Window]::GetConsoleWindow()
   #0 hide
  [Console.Window]::ShowWindow($consolePtr, 0)
 }
-
 
 
 ##Check that script is running in STA mode:hi
@@ -75,7 +68,7 @@ $status.Text = "Sending Ping to check if computer is on..."
 $objForm.Refresh()
 #******     Write-Host -ForegroundColor Blue -BackgroundColor White -Object "Sending Ping to Computer..."
 $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
-    if($isCompEmpty -and $isFileEmpty -and $isAlive){ ## Checks to make sure computername and file name are both non-empty values & that computername responds to pings.
+    if($isCompEmpty -and $isFileEmpty -and ($isAlive -eq $true)){ ## Checks to make sure computername and file name are both non-empty values & that computername responds to pings.
         
         ## Setup Variables
         $sw = [Diagnostics.Stopwatch]::StartNew() # Start Timer
@@ -84,7 +77,7 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $status.Text = "Setting Up HTML File..."
         $objForm.refresh()
         #******     Write-Host -ForegroundColor Green -Object "Setting Up HTML File..."
-        $a = "<html><head><style>`r`n"
+        $a = "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>`r`n<html>`r`n<head>`r`n<style>`r`n"
         $a = $a + "BODY{background-color:white;}`r`n" #Background
         $a = $a + "TABLE{border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;text-align: center;margin-left: auto; margin-right: auto;}`r`n"
         $a = $a + "TH{border-width: 1px;padding: 2px;border-style: solid;border-color: black;}`r`n"
@@ -113,7 +106,7 @@ $isAlive = Test-Connection -ComputerName $targetComputer -Quiet
         $status.Text = "Gathering General PC Information..."
         $objForm.refresh()
         #******     Write-Host -ForegroundColor Green -Object "Gathering General PC Information..."
-        trap {Write-Host -Object "Error has occurred - Probably an RPC Error";return}
+        trap {[System.Windows.Forms.MessageBox]::Show("Unable to connect to RPC Server.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning);$objTextBox.SelectAll();return}
         ### PC Model and Serial # information
         $t1 = Get-WmiObject -Class win32_computersystem -ComputerName $targetComputer -ErrorAction Stop
 
