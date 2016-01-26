@@ -1,0 +1,31 @@
+/* This is for the floating sidebar */
+
+.affix {
+  top: 100px;
+  position: fixed;
+}
+/* This is to add a shadow to the sidebar */
+
+div.dshadow {
+  -webkit-box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  -moz-box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+img.dshadow {
+  -webkit-box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  -moz-box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: 3px 4px 8px 0 rgba(0, 0, 0, 0.2), 3px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  margin: 15px;
+}
+/* Trying to change the pills coloring...
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus {
+    color: black;
+    background-color: #777;
+}
+
+    .nav-pills > li.active > a:hover {
+        background-color: white;
+        color:black;
+    }
+*/
