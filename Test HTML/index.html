@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"/>
 
   <!-- Google Fonts -->
-  <link href='https://fonts.googleapis.com/css?family=Roboto+Slab&effect=outline' rel='stylesheet' type='text/css'/>
+  <link href='https://fonts.googleapis.com/css?family=Roboto+Slab&effect=outline|wallpaper' rel='stylesheet' type='text/css'/>
 <!-- My CSS -->
   <link rel="stylesheet" href="css/head.css" type="text/css" />
   <!-- JQuery -->
@@ -38,11 +38,18 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-  <!--
-     Begin Page-Specific Styling
-     Todo:
-          Move this to it's own CSS Stylesheet for modularity.
-    -->
+	<!-- My Javascript -->
+	<script type="text/javascript">
+	//JQuery for toggling a class
+	/*
+	$(document).ready(function(){
+        $("#id-element").hover(function(){
+            $("#obj").toggleClass(".class");
+            });
+        });
+	*/
+	</script>
+	
   <!-- End Page Styles -->
   <title>Welcome</title>
 </head>
@@ -57,11 +64,18 @@
           <div class="col-xs-1">
           </div>
           <div class="col-xs-11">
-            <h3 class="font-effect-outline" style="font-family: 'Roboto Slab', serif;font-size: 42px">
-								<strong>
-									Welcome
-								</strong>
-							</h3>
+			<!-- <div class="page-header"> -->
+				<h3 class="font-effect-wallpaper hidden-xs hidden-sm" style="font-family: 'Roboto Slab', serif;font-size: 8em;color: white">
+					<strong>
+						Welcome
+					</strong>
+				</h3>
+				<h3 class="font-effect-wallpaper hidden-md hidden-lg" style="font-family: 'Roboto Slab', serif;font-size: 2em;color: white">
+					<strong>
+						Welcome
+					</strong>
+				</h3>
+			<!-- </div> -->
           </div>
         </div>
       </div>
@@ -74,9 +88,14 @@
     <!-- Begin Body Row 1 -->
     <div class="row">
       <main>
-        <div class="col-xs-7 col-xs-offset-1">
+        <div class="col-xs-8 col-xs-offset-1">
+		<div class="page-header">
+			<strong>
+				Page Heading
+			</strong>
+		</div>
           <h1>
-                    <p><img src="images/cat.jpg" alt="Her name is Sesame." class="img-responsive dshadow hidden-xs" style="vertical-align:middle;float:left;-webkit-border-radius: 15px;border-radius: 15px;"/>Lorem ipsum dolor sit amet, in dicunt iuvaret suscipit has, ut modus sensibus quo. Mel ut utamur dignissim. At malis qualisque eum, et oratio accusam abhorreant eum, his te aliquip placerat. Ferri nulla at eam. Quo at dico consequat, in dicta aeque vis, eu nam laudem aliquid.</p>
+                    <p><img src="images/cat.jpg" alt="Her name is Sesame." class="img-responsive dshadow hidden-xs hidden-sm" style="vertical-align:middle;float:left;-webkit-border-radius: 15px;border-radius: 15px;"/>Lorem ipsum dolor sit amet, in dicunt iuvaret suscipit has, ut modus sensibus quo. Mel ut utamur dignissim. At malis qualisque eum, et oratio accusam abhorreant eum, his te aliquip placerat. Ferri nulla at eam. Quo at dico consequat, in dicta aeque vis, eu nam laudem aliquid.</p>
 
 <p>Ex everti consulatu rationibus vel, ex nam quis quaeque dolorum, iisque voluptua no mea. Sed atqui euismod an. Vix inani luptatum euripidis in, mei justo inermis senserit an. Ei dico inimicus abhorreant per, delectus scriptorem ne cum, veniam patrioque eu ius.</p>
 
@@ -90,25 +109,74 @@
         </div>
       </main>
       <!-- Begin Sidebar 1 Floater -->
+			<!--
+				So the plan here is to have one sidebar for screens >sm and another
+				made for screens <=sm size.  Not a lot of difference really, but 
+				it looks a little better in my opinion.
+			-->
       <aside>
-        <div class="col-xs-4" style="padding: 5px">
-          <div class="panel panel-default panel-primary dshadow affix" data-spy="affix" data-offset="100" style="width: 25%">
+        <div class="col-xs-2">
+		<!-- Begin Large Panel for screens =>md -->
+          <div class="panel panel-default panel-primary dshadow affix-lg hidden-xs hidden-sm" data-spy="affix" style="margin: 5px;text-align: left;width: 20%">
             <!-- Sidebar Header -->
             <div class="panel-heading">
-              <h4 class="font-effect-outline" style="font-family: 'Roboto Slab', serif;"><strong><i class="fa fa-bars" style="padding: 5px"></i><div class="hidden-xs" style="display: inline">Navigation</div><div class="visible-xs-inline">Nav</div></strong></h4></div>
+              <h4 class="font-effect-outline" style="font-family: 'Roboto Slab', serif;">
+			  <strong>
+			  <i class="fa fa-bars" style="padding: 5px"></i>
+				<div style="display: inline">
+					Navigation
+				</div>
+			</strong>
+			</h4>
+			</div>
+			<!-- End Panel Header -->
             <!-- Sidebar Body -->
+			<!-- Begin Full Sidebar Nav -->
             <div class="panel-body">
               <ul class="nav nav-pills nav-stacked">
-                <li class="active"><a href="#">Home</a></li>
-                <li><a href="#">Resume</a></li>
-                <li><a href="#">Projects</a></li>
-                <li><a href="#">Fun</a></li>
+                <li class="active"><a href="#" title="Home"><i class="fa fa-home fa-lg"></i><span style="padding-left: 25px;display: inline">Home</span></a></li>
+                <li><a href="#" title="Resume"><i class="fa fa-briefcase fa-lg"></i><span style="padding-left: 25px;display: inline">Resume</span></a></li>
+                <li><a href="#" title="Projects"><i class="fa fa-cog fa-lg fa-spin"></i><span style="padding-left: 25px;display: inline">Projects</span></a></li>
+                <li><a href="#" title="Fun"><i class="fa fa-gamepad fa-lg"></i><span style="padding-left: 25px;display: inline">Fun</span></a></li>
               </ul>
             </div>
+			<!-- End Full Nav -->
+			
           </div>
+		  <!-- End Large Panel -->
+		  
+		  <!-- Begin Small Panel - for screens xs and sm -->
+		  <div class="panel panel-default panel-primary dshadow affix-sm hidden-md hidden-lg" data-spy="affix" data-offset="100" style="margin-right: 20px">
+		  <!-- Sidebar Header -->
+			<div class="panel-heading">
+				<div class="font-effect-outline" style="font-family: 'Roboto Slab', serif;">
+				<strong>
+					<i class="fa fa-bars" style="padding: 5px">
+					</i>
+						<div style="display: inline">
+							Nav
+						</div>
+				</strong>
+				</div>
+			</div>
+			<!-- End Panel Header -->
+			<!-- Begin Small Nav -->
+			<div class="panel-body">
+              <ul class="nav nav-pills nav-stacked" style="text-align: center">
+                <li class="active"><a href="#" title="Home"><i class="fa fa-home fa-2x"></i></a></li>
+                <li><a href="#" title="Resume"><i class="fa fa-briefcase fa-2x"></i></a></li>
+                <li><a href="#" title="Projects"><i class="fa fa-cog fa-2x fa-spin"></i></a></li>
+                <li><a href="#" title="Fun"><i class="fa fa-gamepad fa-2x"></i></a></li>
+              </ul>
+            </div>
+			<!-- End Small Nav -->
+		  </div>
+		  <!-- End Small Panel -->
         </div>
+		<div class="col-xs-1">
+		</div>
       </aside>
-      <!-- End Sidebar 1 -->
+      <!-- End Sidebar 1 Floater -->
 
     </div>
     <!-- End Body Row 1 -->

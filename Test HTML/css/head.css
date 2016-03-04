@@ -1,9 +1,17 @@
-/* This is for the floating sidebar */
+/* This is for the floating sidebar on small screens*/
 
-.affix {
-  top: 100px;
+.affix-sm {
+  top: 130px;
   position: fixed;
 }
+
+/* This is the floating sidebar on large screens */
+
+.affix-lg {
+  top: 225px;
+  position: fixed;
+}
+
 /* This is to add a shadow to the sidebar */
 
 div.dshadow {
