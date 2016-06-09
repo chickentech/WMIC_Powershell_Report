@@ -49,6 +49,9 @@ Function Publish-CaptorForm($color){
 
 if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
+        Write-Host "Removing old Blue site backup from folder H:\Sites\Backup\CaptorForm-Blue-Backup\*"
+        Remove-Item -Path H:\Sites\Backup\CaptorForm-Blue-Backup\* -Recurse -Force
+
         Write-Host "Copying old files out of folder to H:\Sites\Backup\CaptorForm-Blue-Backup\"
         Move-Item -Path H:\Sites\CaptorForm-Blue\* -Destination H:\Sites\Backup\CaptorForm-Blue-Backup\ -Force
 
@@ -83,6 +86,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
     
 
 } elseif($color.ToLower() -eq "green") { ##Deploy to Green
+
+        Write-Host "Removing old Blue site backup from folder H:\Sites\Backup\CaptorForm-Green-Backup\*"
+        Remove-Item -Path H:\Sites\Backup\CaptorForm-Green-Backup\* -Recurse -Force
 
         Write-Host "Copying old files out of folder to H:\Sites\Backup\CaptorForm-Green-Backup\"
         Move-Item -Path H:\Sites\CaptorForm-Green\* -Destination H:\Sites\Backup\CaptorForm-Green-Backup\ -Force
@@ -124,6 +130,9 @@ Function Publish-CaptorIWA($color){
 
 if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
+        Write-Host "Removing old Blue site backup from folder H:\Sites\Backup\CaptorIWA-Blue-Backup\*"
+        Remove-Item -Path H:\Sites\Backup\CaptorIWA-Blue-Backup\* -Recurse -Force
+
 
         Write-Host "Copying old files out of folder to H:\Sites\Backup\CaptorIWA-Blue-Backup\"
         Move-Item -Path H:\Sites\CaptorIWA-Blue\* -Destination H:\Sites\Backup\CaptorIWA-Blue-Backup\ -Force
@@ -157,6 +166,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
     
 
 } elseif($color.ToLower() -eq "green") { ##Deploy to Green
+
+        Write-Host "Removing old Blue site backup from folder H:\Sites\Backup\CaptorIWA-Green-Backup\*"
+        Remove-Item -Path H:\Sites\Backup\CaptorIWA-Green-Backup\* -Recurse -Force
 
         Write-Host "Copying old files out of folder to H:\Sites\Backup\CaptorIWA-Green-Backup\"
         Move-Item -Path H:\Sites\CaptorIWA-Green\* -Destination H:\Sites\Backup\CaptorIWA-Green-Backup\ -Force
