@@ -62,9 +62,6 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Starting Blue Site..."
         Start-Website CaptorForm-Blue
-        
-        Write-Host "Waiting 10 seconds to warm up..."
-        Start-Sleep -s 10
 
         Write-Host "Warming up Blue site"
         #wake up deployment site
@@ -78,6 +75,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Bringing down Green site..."
         Set-Content H:\Sites\CaptorForm-Green\up.html "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
 
         Write-Host "Stopping Green website..."
         Stop-Website CaptorForm-Green
@@ -99,9 +99,6 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Starting Green Site..."
         Start-Website CaptorForm-Green
-        
-        Write-Host "Waiting 10 seconds to warm up..."
-        Start-Sleep -s 10
 
         Write-Host "Warming up Green site"
         #wake up deployment site
@@ -114,6 +111,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Bringing down Blue site..."
         Set-Content H:\Sites\CaptorForm-Blue\up.html "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
 
         Write-Host "Stopping Blue website..."
         Stop-Website CaptorForm-Blue
@@ -143,9 +143,6 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Starting Blue Site..."
         Start-Website CaptorIWA-Blue
-        
-        Write-Host "Waiting 10 seconds to warm up..."
-        Start-Sleep -s 10
 
         Write-Host "Warming up Blue site"
         #wake up deployment site
@@ -158,6 +155,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Bringing down Green site..."
         Set-Content H:\Sites\CaptorIWA-Green\up.html "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
 
         Write-Host "Stopping Green website..."
         Stop-Website CaptorIWA-Green
@@ -179,9 +179,6 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Starting Green Site..."
         Start-Website CaptorIWA-Green
-        
-        Write-Host "Waiting 10 seconds to warm up..."
-        Start-Sleep -s 10
 
         Write-Host "Warming up Green site"
         #wake up deployment site
@@ -194,6 +191,9 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 
         Write-Host "Bringing down Blue site..."
         Set-Content H:\Sites\CaptorIWA-Blue\up.html "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
 
         Write-Host "Stopping Blue website..."
         Stop-Website CaptorIWA-Blue
