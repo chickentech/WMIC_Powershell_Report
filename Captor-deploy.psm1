@@ -22,7 +22,7 @@ Purpose:
 #>
 
 
-Import-Module webadministration -ErrorAction Stop
+#Import-Module webadministration -ErrorAction Stop
 
 <#
 ##  ***TODO***
@@ -203,3 +203,136 @@ if($color.ToLower() -eq "blue"){ ## Deploy to Blue
 }
 
 } #End Deploy-CaptorIWA
+
+
+
+
+
+
+
+Function Publish-Captor{
+[CmdletBinding(DefaultParameterSetName='IWA')]
+Param(
+[Parameter(ParameterSetName='IWA',Position=1)][Parameter(ParameterSetName='FORM',Position=0)][ValidateSet("iwa","form")][string]$whichSite = "iwa",  # Which App
+[Parameter(ParameterSetName='IWA',Position=3)][Parameter(ParameterSetName='FORM',Position=2)][string]$blueAppURL = "blue.captoriwa", #Blue App URL
+[Parameter(ParameterSetName='IWA',Position=4)][Parameter(ParameterSetName='FORM',Position=3)][string]$greenAppURL = "green.captoriwa", #Green App URL
+[Parameter(ParameterSetName='IWA',Position=5)][Parameter(ParameterSetName='FORM',Position=4)][int]$blueAppPort = 90, #Blue App port number
+[Parameter(ParameterSetName='IWA',Position=6)][Parameter(ParameterSetName='FORM',Position=5)][int]$greenAppPort = 91, #Green App port number
+[Parameter(ParameterSetName='IWA',Position=7)][Parameter(ParameterSetName='FORM',Position=6)][string]$appFolderPath = "H:\Sites\" #Path to folders
+)
+
+if($whichSite.ToLower() -eq "iwa"){
+    $baseAppName = "CaptorIWA"
+
+} elseif ($whichSite.ToLower() -eq "form"){
+    $baseAppName = "CaptorForm"
+    Write-Host "Setting default variables for the form deployment."
+    $baseAppName = "CaptorForm"
+    $blueAppURL = "blue.captorform"
+    $greenAppURL = "green.captorform"
+    $blueAppPort = 8080
+    $greenAppPort = 8081
+}
+
+
+Write-Host "Got this far"
+$blueSiteState = (Get-WebsiteState -Name ($baseAppName + "-Blue")).Value
+$greenSiteState = (Get-WebsiteState -Name ($baseAppName + "-Green")).Value
+
+$baseAppFolder = $appFolderPath + $baseAppName + "\"
+
+$blueWebsiteName = $baseAppName + "-Blue"
+$greenWebsiteName = $baseAppName + "-Green"
+
+$blueSiteFolder = $appFolderPath + $blueWebsiteName + "\"
+$greenSiteFolder = $appFolderPath + $greenWebsiteName + "\"
+
+$blueAppFullURL = "http://" + $blueAppURL + ":" + $blueAppPort
+$greenAppFullURL = "http://" + $greenAppURL + ":" + $greenAppPort
+
+
+
+if($blueSiteState -eq "Stopped"){ ## Deploy to Blue
+
+        $blueBackupPath = $appFolderPath + "Backup\" + $baseAppName + "-Blue-Backup\"
+
+        Write-Host "Removing old Blue site backup from folder $blueBackupPath"
+        Remove-Item -Path ($blueBackupPath + "*") -Recurse -Force
+
+        Write-Host "Copying old files out of folder to $blueBackupPath"
+        Move-Item -Path ($blueSiteFolder + "*") -Destination $blueBackupPath -Force
+
+
+        Write-Host "Copying raw files to $blueSiteFolder..."
+        #$destination.CopyHere($deploymentFilesPath + "\*", [System.Int32]1556)
+        Copy-Item -Path ($baseAppFolder + "*") -Filter *.* -Destination $blueSiteFolder -Recurse -Force
+
+        Write-Host "Starting Blue Site..."
+        Start-Website $blueWebsiteName
+        
+
+        Write-Host "Warming up Blue site"
+        #wake up deployment site
+        Write-Host "Starting deployment website $blueAppFullURL..."
+        $page = (New-Object System.Net.WebClient).DownloadString($blueAppFullURL)
+
+
+        Write-Host "Bringing Blue site up..."
+        Set-Content ($blueSiteFolder + "up.html") "up"
+
+        Write-Host "Bringing down Green site..."
+        Set-Content ($greenSiteFolder + "up.html") "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
+
+        Write-Host "Stopping Green website..."
+        Stop-Website $greenWebsiteName
+
+        Write-Host "Done."
+    
+
+} elseif($greenSiteState -eq "Stopped") { ##Deploy to Green
+
+        $greenBackupPath = $appFolderPath + "Backup\" + $baseAppName + "-Green-Backup\"
+
+        Write-Host "Removing old Green site backup from folder $greenBackupPath"
+        Remove-Item -Path ($greenBackupPath + "*") -Recurse -Force
+
+        Write-Host "Copying old files out of folder to $greenBackupPath"
+        Move-Item -Path ($greenSiteFolder + "*") -Destination $greenBackupPath -Force
+
+
+        Write-Host "Copying raw files to $greenSiteFolder..."
+        #$destination.CopyHere($deploymentFilesPath + "\*", [System.Int32]1556)
+        Copy-Item -Path ($baseAppFolder + "*") -Filter *.* -Destination $greenSiteFolder -Recurse -Force
+
+        Write-Host "Starting Green Site..."
+        Start-Website $greenWebsiteName
+        
+
+        Write-Host "Warming up Green site"
+        #wake up deployment site
+        Write-Host "Starting deployment website $greenAppFullURL..."
+        $page = (New-Object System.Net.WebClient).DownloadString($greenAppFullURL)
+
+
+        Write-Host "Bringing Green site up..."
+        Set-Content ($greenSiteFolder + "up.html") "up"
+
+        Write-Host "Bringing down Blue site..."
+        Set-Content ($blueSiteFolder + "up.html") "down"
+
+        Write-Host "Waiting 10 seconds to warm up..."
+        Start-Sleep -s 10
+
+        Write-Host "Stopping Blue website..."
+        Stop-Website $blueWebsiteName
+
+        Write-Host "Done."
+    
+
+}
+
+
+} #End Deploy-CaptorApp
