@@ -1,4 +1,4 @@
-﻿<#
+<#
 Author:  Nathan Behe
 Date: 6/10/2016
 Version: 1.14
@@ -26,11 +26,7 @@ Purpose:
 
 <#
 ##  ***TODO***
-##  ==  Pull this together into a single Cmdlet and specify "form" or "iwa" for the site to deploy to.
-
 ##  ==  Give option to deploy code from a different location.
-
-##  ==  Finally, (down the road) give an option to roll back the last move and restore the backup and bring it back online.
 
 Parameter sets:
 
@@ -48,7 +44,8 @@ Param(
 [Parameter(Mandatory=$False,Position=3)][string]$greenAppURL = "green.captorapp", #Green App URL
 [Parameter(Mandatory=$False,Position=4)][int]$blueAppPort = 8080, #Blue App port number
 [Parameter(Mandatory=$False,Position=5)][int]$greenAppPort = 8081, #Green App port number
-[Parameter(Mandatory=$False,Position=6)][string]$appFolderPath = "H:\Sites\" #Path to folders
+[Parameter(Mandatory=$False,Position=6)][string]$appFolderPath = "H:\Sites\", #Path to folders
+[Parameter(Mandatory=$False,Position=6)][string]$staticHTMLSubPath = "infraapi\wwwroot\" #Path to static HTML
 )
 
 Write-Host "Got this far"
@@ -62,6 +59,9 @@ $greenWebsiteName = $baseAppName + "-Green"
 
 $blueSiteFolder = $appFolderPath + $blueWebsiteName + "\"
 $greenSiteFolder = $appFolderPath + $greenWebsiteName + "\"
+
+$blueSiteUpFolder = $blueSiteFolder + $staticHTMLSubPath + "up.html"
+$greenSiteUpFolder = $greenSiteFolder + $staticHTMLSubPath + "up.html"
 
 $blueAppFullURL = "http://" + $blueAppURL + ":" + $blueAppPort
 $greenAppFullURL = "http://" + $greenAppURL + ":" + $greenAppPort
@@ -94,10 +94,10 @@ if($blueSiteState -eq "Stopped"){ ## Deploy to Blue
 
 
         Write-Host "Bringing Blue site up..."
-        Set-Content ($blueSiteFolder + "up.html") "up"
+        Set-Content $blueSiteUpFolder "up"
 
         Write-Host "Bringing down Green site..."
-        Set-Content ($greenSiteFolder + "up.html") "down"
+        Set-Content $greenSiteUpFolder "down"
 
         Write-Host "Waiting 10 seconds to warm up..."
         Start-Sleep -s 10
@@ -134,10 +134,10 @@ if($blueSiteState -eq "Stopped"){ ## Deploy to Blue
 
 
         Write-Host "Bringing Green site up..."
-        Set-Content ($greenSiteFolder + "up.html") "up"
+        Set-Content $greenSiteUpFolder "up"
 
         Write-Host "Bringing down Blue site..."
-        Set-Content ($blueSiteFolder + "up.html") "down"
+        Set-Content $blueSiteUpFolder "down"
 
         Write-Host "Waiting 10 seconds to warm up..."
         Start-Sleep -s 10
@@ -153,3 +153,4 @@ if($blueSiteState -eq "Stopped"){ ## Deploy to Blue
 
 } #End Deploy-CaptorApp
 
+Export-ModuleMember -Function Publish-CaptorApp
